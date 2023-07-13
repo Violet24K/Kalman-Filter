@@ -30,6 +30,41 @@ class KalmanFilter(object):
         I = np.eye(self.n)
         self.P = np.dot(np.dot(I - np.dot(K, self.H), self.P), 
         	(I - np.dot(K, self.H)).T) + np.dot(np.dot(K, self.R), K.T)
+        
+
+class KalmanFilter_Realtime(object):
+    def __init__(self, B = None, H = None, Q = None, R = None, P = None, x0 = None):
+
+        if(H is None):
+            raise ValueError("Set proper system dynamics.")
+
+        self.n = 3
+        self.m = H.shape[1]
+
+        self.H = H
+        self.B = 0 if B is None else B
+        self.Q = 0.1*np.eye(self.n) if Q is None else Q
+        self.R = np.eye(1) if R is None else R
+        self.P = np.eye(self.n) if P is None else P
+        self.x = np.zeros((self.n, 1)) if x0 is None else x0
+
+    def predict(self, F, u = 0):
+        self.x = np.dot(F, self.x) + np.dot(self.B, u)
+        self.P = np.dot(np.dot(F, self.P), F.T) + self.Q
+        return self.x
+
+    def update(self, z):
+        y = z - np.dot(self.H, self.x)
+        S = self.R + np.dot(self.H, np.dot(self.P, self.H.T))
+        K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))
+        self.x = self.x + np.dot(K, y)
+        I = np.eye(self.n)
+        self.P = np.dot(np.dot(I - np.dot(K, self.H), self.P), 
+        	(I - np.dot(K, self.H)).T) + np.dot(np.dot(K, self.R), K.T)
+        
+    def change_x(self, new_x):
+        self.x = new_x
+
 
 def example():
 	dt = 1.0/60
